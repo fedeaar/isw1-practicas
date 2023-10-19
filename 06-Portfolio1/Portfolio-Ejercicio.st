@@ -5,159 +5,335 @@ TestCase subclass: #PortfolioTest
 	poolDictionaries: ''
 	category: 'Portfolio-Ejercicio'!
 
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 19:27:33'!
+!PortfolioTest methodsFor: 'docs' stamp: 'fa 10/18/2023 22:55:12'!
+conceptualReference 
+	"
+	formada a medida que se desarrolló el ejercicio.
+	
+	ejemplo (mayus. portfolio, minus. cuenta):
+	
+		A   B
+	      /	  \/  \
+	    C   D   e
+	   /	/ \ 	
+	 e   F  G   H
+		/  \  /  \
+	       i	    j     i
+		
+	conceptualmente:
+		- un asset puede pertenecer a varios portfolios
+		- un asset no puede estar repetido en un portfolio
+	esto genera las siguientes observaciones:
+
+		- el asset no puede estar en un subportfolio propio (ya está en el portfolio)
+		- el asset no puede estar en un superportfolio  (agregarlo rompe el contrato 
+		de este otro)
+		- el asset puede estar en otro portfolio que también contenga a alguno de 
+		mis subportfolios (son independientes)
+	"! !
+
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:36:48'!
 test01PortfolioHasZeroAsBalanceWhenCreated
+	"
+	estructura:
+		P1
+	"
+	| P1 |
+	
+	P1 := Portfolio new.
+	
+	self assert: P1 balance = 0.! !
 
-	| portfolio |
-
-	portfolio := Portfolio new.
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 20:53:04'!
+test02D́epositIncreasesAndWithdrawDecreasesBalanceOnTransactionValue 
+	"
+	estructura:
+		P1
+	       /
+	 a1:100
+	"
+	| A1 P1 |
 	
-	self assert: portfolio balance = 0.! !
-
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 19:21:03'!
-test02DepositIncreasesBalanceOnAddingAccount
-
-	| account portfolio |
+	P1 := Portfolio new.
+	A1 := ReceptiveAccount new.
 	
-	account := ReceptiveAccount  new.
-	Deposit register: 100 on: account.
-		
-	portfolio := Portfolio new.
-	portfolio add: account.
-	
-	self assert: portfolio balance = 100.! !
-
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 19:33:09'!
-test03DepositIncreasesBalanceOnAddingPortfolio
-
-	| account parentPortfolio childPortfolio |
-	
-	parentPortfolio := Portfolio new.
-	
-	childPortfolio := Portfolio new.
-	parentPortfolio add: childPortfolio.
-	
-	account := ReceptiveAccount  new.
-	Deposit register: 100 on: account.
-	childPortfolio add: account.
-	
-	self assert: parentPortfolio balance = 100.! !
-
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 19:31:15'!
-test04WithdrawDecreasesBalanceOnTransactionValue 
-
-	| account portfolio |
-	
-	account := ReceptiveAccount new.
-	Deposit register: 100 on: account.
-	
-	portfolio := Portfolio new.
-	portfolio add: account.
-	
-	Withdraw register: 50 on: account.
-	
-	self assert: portfolio balance = 50.! !
-
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 19:52:40'!
-test05PortfolioKnowsRegisteredTransactions
-
-	| account deposit withdraw portfolio |
-	
-	account := ReceptiveAccount new.
-	deposit := Deposit register: 100 on: account.
-	withdraw := Withdraw register: 50 on: account.
-	
-	portfolio := Portfolio new.
-	portfolio add: account.
-	
-	self assert: (portfolio hasRegistered: deposit).
-	self assert: (portfolio hasRegistered: withdraw).! !
-
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:29:56'!
-test06PortfolioKnowsRegisteredTransactionsOverGenerations
-
-	| account deposit withdraw childPortfolio parentPortfolio |
-	
-	account := ReceptiveAccount new.
-	deposit := Deposit register: 100 on: account.
-	withdraw := Withdraw register: 50 on: account.
-	
-	childPortfolio := Portfolio new.
-	childPortfolio add: account.
-	
-	parentPortfolio := Portfolio new.
-	parentPortfolio add: childPortfolio.
-	
-	self assert: (parentPortfolio hasRegistered: deposit).
-	self assert: (parentPortfolio hasRegistered: withdraw).! !
-
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 19:59:10'!
-test07PortfolioKnowsItsTransactions 
-
-	| account deposit portfolio |
-	
-	account := ReceptiveAccount new.
-	
-	deposit := Deposit register: 50 on: account.
-	
-	portfolio := Portfolio new.
-	portfolio add: account.
-		
-	self assert: 1 equals: portfolio transactions size.
-	self assert: (portfolio transactions includes: deposit).
+	P1 addAsset: A1.
+	Deposit register: 100 on: A1.
+	self assert: P1 balance = 100.
+	Withdraw register: 50 on: A1.
+	self assert: P1 balance = 50.
 ! !
 
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:30:30'!
-test08PortfolioDoesNotKnowNotRegisteredTransactions
-
-	| deposit withdraw account portfolio |
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:37:10'!
+test03BalanceChangesOnAddingAccount
+	"
+	estructura:
+		P1
+	       /
+	 a1:100
+	"
+	| A1 P1 |
 	
-	account := ReceptiveAccount new.
+	P1 := Portfolio new.
+	A1 := ReceptiveAccount  new.		
+	
+	P1 addAsset: A1.
+	Deposit register: 100 on: A1.
+	self assert: P1 balance = 100.
+! !
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:37:41'!
+test04BalanceChangesOnAddingPortfolio
+	"
+	estructura:
+		P1
+	       /
+	    P2
+	    /
+	a1:100
+	"
+	| A1 P1 P2 |
+	
+	P1 := Portfolio new.
+	P2 := Portfolio new.
+	A1 := ReceptiveAccount  new.
+	
+	Deposit register: 100 on: A1.
+	P2 addAsset: A1.
+	self assert: P1 balance = 0.
+	P1 addAsset: P2.
+	self assert: P1 balance = 100.
+! !
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:41:08'!
+test05PortfolioKnowsRegisteredTransactions
+	"
+	estructura:
+		P1
+	       /
+	 a1:50
+	"
+	| P1 a1 deposit withdraw |
+	
+	P1 := Portfolio new.
+	a1 := ReceptiveAccount new.
+	
+	deposit := Deposit register: 100 on: a1.
+	withdraw := Withdraw register: 50 on: a1.
+	P1 addAsset: a1.
+	self assert: (P1 hasRegistered: deposit).
+	self assert: (P1 hasRegistered: withdraw).! !
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:41:42'!
+test06PortfolioKnowsRegisteredTransactionsOverGenerations
+	"
+	estructura:
+		P1
+	       /
+	    P2
+	    /
+	a1:50
+	"
+	| P1 P2 a1 deposit withdraw |
+	
+	P1 := Portfolio new.
+	P2 := Portfolio new.
+	a1 := ReceptiveAccount new.
+	
+	deposit := Deposit register: 100 on: a1.
+	withdraw := Withdraw register: 50 on: a1.
+	P2 addAsset: a1.
+	P1 addAsset: P2.
+	self assert: (P1 hasRegistered: deposit).
+	self assert: (P1 hasRegistered: withdraw).! !
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:42:41'!
+test07PortfolioKnowsItsTransactions 
+	"
+	estructura:
+		P1
+	       /
+	 a1:50
+	"
+	| P1 a1 deposit |
+	
+	P1 := Portfolio new.
+	a1 := ReceptiveAccount new.
+	
+	deposit := Deposit register: 50 on: a1.
+	P1 addAsset: a1.
+	self assert: 1 equals: P1 transactions size.
+	self assert: (P1 transactions includes: deposit).
+! !
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:43:42'!
+test08PortfolioDoesNotKnowNotRegisteredTransactions
+	"
+	estructura:
+		P1
+	       /
+	 a1:150
+	"
+	| P1 a1 deposit withdraw |
+	
+	P1 := Portfolio new.
+	a1 := ReceptiveAccount new.
+	
 	deposit :=  Deposit for: 200.
 	withdraw := Withdraw for: 50.
-	
-	portfolio := Portfolio new.
-	portfolio add: account.
-		
-	self deny: (portfolio hasRegistered: deposit).
-	self deny: (portfolio hasRegistered:withdraw).
+	P1 addAsset: a1.
+	self deny: (P1 hasRegistered: deposit).
+	self deny: (P1 hasRegistered:withdraw).
 ! !
 
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:30:25'!
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:45:02'!
 test09PortfolioKnowsItsTransactionsOverGenerations
-
-	| account deposit parentPortfolio childPortfolio |
+	"
+	estructura:
+		P1
+	       /
+	    P2
+	    /
+	a1:50
+	"
+	| P1 P2 a1 deposit |
 	
-	account := ReceptiveAccount new.
+	P1 := Portfolio new.
+	P2 := Portfolio new.
+	a1 := ReceptiveAccount new.
 	
-	deposit := Deposit register: 50 on: account.
-	
-	childPortfolio := Portfolio new.
-	childPortfolio add: account.
-	
-	parentPortfolio := Portfolio new.
-	parentPortfolio add: childPortfolio.
-		
-	self assert: 1 equals: parentPortfolio transactions size.
-	self assert: (parentPortfolio transactions includes: deposit).
+	deposit := Deposit register: 50 on: a1.
+	P2 addAsset: a1.
+	P1 addAsset: P2.
+	self assert: 1 equals: P1 transactions size.
+	self assert: (P1 transactions includes: deposit).
 ! !
 
-!PortfolioTest methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:37:01'!
-test10PortfolioCannotBeAddedTwiceToTheSameTree
-
-	| parentPortfolio childPortfolio |
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:45:56'!
+test10AssetCannotBeAddedTwiceToTheSamePortfolio
+	"
+	estructura:
+		P1
+	       //
+	    P2
+	"
+	| P1 P2 |
 	
-	childPortfolio := Portfolio new.
+	P2 := Portfolio new.
+	P1 := Portfolio new.
 	
-	parentPortfolio := Portfolio new.
-	parentPortfolio add: childPortfolio.
-	
+	P1 addAsset: P2.
 	self 
-		should: [parentPortfolio add: childPortfolio.]
+		should: [P1 addAsset: P2.]
 		raise: Error
 		withExceptionDo: [ :anException | 
-			self assert: anException equals: Portfolio attemptedToAddDuplicateErrorDescription.
+			self assert: anException messageText equals: AssetState attemptedToAddDuplicateAssetErrorDescription.
 		].
+! !
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:47:41'!
+test11PortfolioCanBeShared
+	"
+	estructura:
+		P1  P2
+	       	 \   /
+	    	 P3
+	"
+	| P1 P2 P3 |
+	
+	P1 := Portfolio new.
+	P2 := Portfolio new.
+	P3 := Portfolio new.
+	
+	P1 addAsset: P3.
+	P2 addAsset: P3.
+	self assert: (
+		(P1 holds: P3) and: 
+		(P2 holds: P3)
+	). 
+! !
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:54:28'!
+test12AssetCannotBeAddedIfItBelongsToTheCurrentPortfolio
+	"
+	estructura:
+		P1
+	       /  \\
+	    P2  ||
+	      \	 //
+	      a1      
+	"
+	| P1 P2 a1 |
+	
+	P1 := Portfolio new.
+	P2 := Portfolio new.
+	a1 := ReceptiveAccount new.
+	
+	P1 addAsset: P2.
+	P2 addAsset: a1.
+	self 
+		should: [P1 addAsset: a1.]
+		raise: Error
+		withExceptionDo: [ :anException | 
+			self assert: anException messageText equals: AssetState attemptedToAddDuplicateAssetErrorDescription.
+		].
+! !
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:54:32'!
+test13AssetCannotBeAddedIfItBelongsToThePortfolioCurrentPortfolioBelongsTo
+	"
+	estructura:
+		P1
+	       /  \
+	    P2  P3
+	      \	 //
+	      a1      
+	"
+	| P1 P2 P3 a1 |
+	
+	P1 := Portfolio new.
+	P2 := Portfolio new.
+	P3 := Portfolio new.
+	a1 := ReceptiveAccount new.
+	
+	P1 addAsset: P2.
+	P1 addAsset: P3.
+	P2 addAsset: a1.
+	self 
+		should: [P3 addAsset: a1.]
+		raise: Error
+		withExceptionDo: [ :anException | 
+			self assert: anException messageText equals: AssetState attemptedToAddDuplicateAssetErrorDescription.
+		].! !
+
+!PortfolioTest methodsFor: 'tests' stamp: 'fa 10/18/2023 22:54:43'!
+test14AssetCanBeAddedIfItBelongsToAnotherParentPortfolioOfSomeSharedChildPortfolio 
+	"
+	estructura:
+	       P1  P2
+	      /	  \/   \
+	   a1	 P3  a1
+	"
+	| P1 P2 P3 a1 |
+	
+	P1 := Portfolio new.
+	P2 := Portfolio new.
+	P3 := Portfolio new.
+	a1 := ReceptiveAccount new.
+	
+	P1 addAsset: P3.
+	P1 addAsset: a1.
+	P2 addAsset: P3.
+	P2 addAsset: a1.
+	
+	self assert: (
+		(P1 holds: a1) and: 
+		(P2 holds: a1) and: 
+		(P3 holds: a1) not
+	)
+	
+	
 ! !
 
 
@@ -249,119 +425,6 @@ test07AccountKnowsItsTransactions
 		
 	self assert: 1 equals: account1 transactions size.
 	self assert: (account1 transactions includes: deposit1).
-! !
-
-
-!classDefinition: #AbstractAsset category: 'Portfolio-Ejercicio'!
-Object subclass: #AbstractAsset
-	instanceVariableNames: ''
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Portfolio-Ejercicio'!
-
-!AbstractAsset methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 19:16:33'!
-balance 
-
-	^ self subclassResponsibility.! !
-
-!AbstractAsset methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 19:17:47'!
-hasRegistered: aTransaction
-
-	^ self subclassResponsibility.! !
-
-!AbstractAsset methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 19:16:49'!
-transactions 
-
-	^ self subclassResponsibility.! !
-
-
-!classDefinition: #Portfolio category: 'Portfolio-Ejercicio'!
-AbstractAsset subclass: #Portfolio
-	instanceVariableNames: 'contents'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Portfolio-Ejercicio'!
-
-!Portfolio methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:52:11'!
-add: anAsset
-
-	contents add: anAsset.! !
-
-!Portfolio methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:50:25'!
-balance
-
-	^ contents sum: [ :anAsset | anAsset balance ] ifEmpty: [0].! !
-
-!Portfolio methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:50:30'!
-hasRegistered: aTransaction
-
-	^ contents anySatisfy: [ :anAsset | anAsset hasRegistered: aTransaction ].! !
-
-!Portfolio methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:44:14'!
-initialize
-	
-	contents := OrderedCollection new.! !
-
-!Portfolio methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:50:37'!
-transactions 
-
-	| acc |
-	
-	acc := OrderedCollection new.
-	
-	contents do: [ :anAsset | 
-		acc addAll: ( anAsset transactions )
-	].
-
-	^ acc.! !
-
-"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
-
-!classDefinition: 'Portfolio class' category: 'Portfolio-Ejercicio'!
-Portfolio class
-	instanceVariableNames: ''!
-
-!Portfolio class methodsFor: 'as yet unclassified' stamp: 'BK 10/16/2023 20:37:27'!
-attemptedToAddDuplicateErrorDescription
-
-	^ self error: 'Attempted to add a duplicate to the same tree.'! !
-
-
-!classDefinition: #ReceptiveAccount category: 'Portfolio-Ejercicio'!
-AbstractAsset subclass: #ReceptiveAccount
-	instanceVariableNames: 'transactions'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Portfolio-Ejercicio'!
-
-!ReceptiveAccount methodsFor: 'initialization' stamp: 'NR 10/17/2019 15:06:56'!
-initialize
-
-	transactions := OrderedCollection new.! !
-
-
-!ReceptiveAccount methodsFor: 'transactions' stamp: 'HernanWilkinson 7/13/2011 18:37'!
-register: aTransaction
-
-	transactions add: aTransaction 
-! !
-
-!ReceptiveAccount methodsFor: 'transactions' stamp: 'HernanWilkinson 7/13/2011 18:37'!
-transactions 
-
-	^ transactions copy! !
-
-
-!ReceptiveAccount methodsFor: 'balance' stamp: 'BK 10/16/2023 18:56:05'!
-balance
-
-	^transactions sum: [ :aTransaction | aTransaction fulfilmentValue ] ifEmpty: [ 0 ]! !
-
-
-!ReceptiveAccount methodsFor: 'testing' stamp: 'NR 10/17/2019 03:28:43'!
-hasRegistered: aTransaction
-
-	^ transactions includes: aTransaction 
 ! !
 
 
@@ -467,3 +530,463 @@ Withdraw class
 for: aValue
 
 	^ self new initializeFor: aValue ! !
+
+
+!classDefinition: #Asset category: 'Portfolio-Ejercicio'!
+Object subclass: #Asset
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!Asset methodsFor: 'state' stamp: 'fa 10/18/2023 21:04:46'!
+addParentAsset: anAsset 
+
+	^ self subclassResponsibility.! !
+
+!Asset methodsFor: 'state' stamp: 'fa 10/18/2023 20:59:53'!
+changeStateTo: state 
+
+	^ self subclassResponsibility.! !
+
+!Asset methodsFor: 'state' stamp: 'fa 10/18/2023 20:59:21'!
+holds: anAsset 
+
+	^ self subclassResponsibility.! !
+
+!Asset methodsFor: 'state' stamp: 'fa 10/18/2023 20:59:34'!
+someParentAssetHolds: anAsset 
+
+	^ self subclassResponsibility.! !
+
+
+!Asset methodsFor: 'transactions' stamp: 'fa 10/18/2023 20:40:05'!
+addTransactionsTo: anOrderedCollection 
+
+	^ self subclassResponsibility.! !
+
+!Asset methodsFor: 'transactions' stamp: 'BK 10/16/2023 19:16:49'!
+transactions 
+
+	^ self subclassResponsibility.! !
+
+
+!Asset methodsFor: 'balance' stamp: 'BK 10/16/2023 19:16:33'!
+balance 
+
+	^ self subclassResponsibility.! !
+
+
+!Asset methodsFor: 'testing' stamp: 'BK 10/16/2023 19:17:47'!
+hasRegistered: aTransaction
+
+	^ self subclassResponsibility.! !
+
+
+!classDefinition: #Portfolio category: 'Portfolio-Ejercicio'!
+Asset subclass: #Portfolio
+	instanceVariableNames: 'state'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!Portfolio methodsFor: 'transactions' stamp: 'fa 10/18/2023 20:34:11'!
+addTransactionsTo: anOrderedCollection 
+
+	self assets do: [ :anAsset | anAsset addTransactionsTo: anOrderedCollection ].! !
+
+!Portfolio methodsFor: 'transactions' stamp: 'fa 10/18/2023 20:38:37'!
+transactions 
+
+	| acc |
+	
+	acc := OrderedCollection new.
+	self assets do: [ :anAsset | anAsset addTransactionsTo: acc ].
+	
+	^ acc.! !
+
+
+!Portfolio methodsFor: 'state' stamp: 'fa 10/18/2023 20:37:18'!
+addAsset: anAsset
+
+	state addChildAsset: anAsset.! !
+
+!Portfolio methodsFor: 'state' stamp: 'fa 10/18/2023 20:36:59'!
+addParentAsset: anAsset
+
+	state addParentAsset: anAsset.! !
+
+!Portfolio methodsFor: 'state' stamp: 'fa 10/18/2023 20:33:56'!
+assets
+
+	^ state childAssets.! !
+
+!Portfolio methodsFor: 'state' stamp: 'fa 10/18/2023 19:16:23'!
+changeStateTo: newState
+	
+	state := newState.! !
+
+!Portfolio methodsFor: 'state' stamp: 'fa 10/18/2023 20:58:52'!
+holds: anAsset
+
+	^state holds: anAsset.! !
+
+!Portfolio methodsFor: 'state' stamp: 'fa 10/18/2023 20:49:57'!
+someParentAssetHolds: anAsset
+
+	^state someParentAssetHolds: anAsset.! !
+
+
+!Portfolio methodsFor: 'initialization' stamp: 'fa 10/18/2023 20:53:52'!
+initialize
+	
+	state := RootState for: self.! !
+
+
+!Portfolio methodsFor: 'testing' stamp: 'fa 10/18/2023 20:34:45'!
+hasRegistered: aTransaction
+
+	^self assets anySatisfy: [ :anAsset | anAsset hasRegistered: aTransaction ].! !
+
+
+!Portfolio methodsFor: 'balance' stamp: 'fa 10/18/2023 21:13:14'!
+balance
+
+	^self assets sum: [ :anAsset | anAsset balance ] ifEmpty: [0].! !
+
+
+!classDefinition: #ReceptiveAccount category: 'Portfolio-Ejercicio'!
+Asset subclass: #ReceptiveAccount
+	instanceVariableNames: 'transactions state'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!ReceptiveAccount methodsFor: 'initialization' stamp: 'fa 10/18/2023 21:07:06'!
+initialize
+
+	state := LeafState for: self.
+	transactions := OrderedCollection new.! !
+
+
+!ReceptiveAccount methodsFor: 'transactions' stamp: 'fa 10/18/2023 20:39:52'!
+addTransactionsTo: anOrderedCollection 
+
+	anOrderedCollection addAll: transactions.! !
+
+!ReceptiveAccount methodsFor: 'transactions' stamp: 'HernanWilkinson 7/13/2011 18:37'!
+register: aTransaction
+
+	transactions add: aTransaction 
+! !
+
+!ReceptiveAccount methodsFor: 'transactions' stamp: 'HernanWilkinson 7/13/2011 18:37'!
+transactions 
+
+	^ transactions copy! !
+
+
+!ReceptiveAccount methodsFor: 'balance' stamp: 'fa 10/18/2023 21:13:31'!
+balance
+
+	^transactions sum: [ :aTransaction | aTransaction fulfilmentValue ] ifEmpty: [ 0 ].! !
+
+
+!ReceptiveAccount methodsFor: 'testing' stamp: 'NR 10/17/2019 03:28:43'!
+hasRegistered: aTransaction
+
+	^ transactions includes: aTransaction 
+! !
+
+
+!ReceptiveAccount methodsFor: 'state' stamp: 'fa 10/18/2023 21:09:20'!
+addParentAsset: anAsset
+
+	state addParentAsset: anAsset.! !
+
+!ReceptiveAccount methodsFor: 'state' stamp: 'fa 10/18/2023 21:10:05'!
+changeStateTo: newState
+	
+	state := newState.! !
+
+!ReceptiveAccount methodsFor: 'state' stamp: 'fa 10/18/2023 21:08:07'!
+holds: anAsset 
+
+	^state holds: anAsset.! !
+
+
+!classDefinition: #AssetState category: 'Portfolio-Ejercicio'!
+Object subclass: #AssetState
+	instanceVariableNames: 'assetReference'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!AssetState methodsFor: 'initialization' stamp: 'fa 10/18/2023 20:15:34'!
+initialize
+
+	^self subclassResponsibility.! !
+
+
+!AssetState methodsFor: 'getters' stamp: 'fa 10/18/2023 20:08:05'!
+childAssets
+
+	^self subclassResponsibility.! !
+
+!AssetState methodsFor: 'getters' stamp: 'fa 10/18/2023 20:08:10'!
+parentAssets
+
+	^self subclassResponsibility.! !
+
+
+!AssetState methodsFor: 'testing' stamp: 'fa 10/18/2023 20:30:37'!
+referencesOrHolds: anAsset
+
+	^self subclassResponsibility.! !
+
+!AssetState methodsFor: 'testing' stamp: 'fa 10/18/2023 20:09:13'!
+someChildAssetHolds: anAsset
+
+	^self subclassResponsibility.! !
+
+!AssetState methodsFor: 'testing' stamp: 'fa 10/18/2023 20:09:18'!
+someParentAssetHolds: anAsset
+
+	^self subclassResponsibility.! !
+
+
+!AssetState methodsFor: 'setters' stamp: 'fa 10/18/2023 20:08:56'!
+addChildAsset: anAsset
+
+	^self subclassResponsibility.! !
+
+!AssetState methodsFor: 'setters' stamp: 'fa 10/18/2023 20:09:02'!
+addParentAsset: anAsset
+
+	^self subclassResponsibility.! !
+
+!AssetState methodsFor: 'setters' stamp: 'fa 10/18/2023 19:53:38'!
+setAssetReference: anAsset
+
+	assetReference := anAsset.! !
+
+!AssetState methodsFor: 'setters' stamp: 'fa 10/18/2023 22:21:13'!
+setChildAssets: anAsset
+
+	^self subclassResponsibility.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'AssetState class' category: 'Portfolio-Ejercicio'!
+AssetState class
+	instanceVariableNames: ''!
+
+!AssetState class methodsFor: 'instance creation' stamp: 'fa 10/18/2023 20:20:05'!
+for: anAsset
+
+	^ self subclassResponsibility.! !
+
+
+!AssetState class methodsFor: 'error descriptions' stamp: 'fa 10/18/2023 22:17:47'!
+attemptedToAddDuplicateAssetErrorDescription
+
+	^ 'Attempted to add a duplicate to the same tree.'! !
+
+
+!classDefinition: #LeafState category: 'Portfolio-Ejercicio'!
+AssetState subclass: #LeafState
+	instanceVariableNames: 'ParentAssets parentAssets'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!LeafState methodsFor: 'initialization' stamp: 'fa 10/18/2023 21:05:41'!
+initialize
+
+	parentAssets := OrderedCollection new.! !
+
+
+!LeafState methodsFor: 'testing' stamp: 'fa 10/18/2023 22:36:26'!
+holds: anAsset
+
+	^assetReference == anAsset.
+	! !
+
+
+!LeafState methodsFor: 'setters' stamp: 'fa 10/18/2023 21:05:56'!
+addParentAsset: anAsset
+
+	parentAssets add: anAsset.! !
+
+
+!LeafState methodsFor: 'getters' stamp: 'fa 10/18/2023 21:06:12'!
+parentAssets
+
+	^parentAssets.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'LeafState class' category: 'Portfolio-Ejercicio'!
+LeafState class
+	instanceVariableNames: ''!
+
+!LeafState class methodsFor: 'instance creation' stamp: 'fa 10/18/2023 21:07:33'!
+for: anAsset
+
+	|state|
+	
+	state := LeafState new.
+	state setAssetReference: anAsset.
+	
+	^state.! !
+
+
+!classDefinition: #RootState category: 'Portfolio-Ejercicio'!
+AssetState subclass: #RootState
+	instanceVariableNames: 'childAssets'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!RootState methodsFor: 'getters' stamp: 'fa 10/18/2023 20:19:06'!
+childAssets
+
+	^childAssets.! !
+
+!RootState methodsFor: 'getters' stamp: 'fa 10/18/2023 20:18:52'!
+parentAssets
+
+	^self error: 'RootState has no parents'.! !
+
+
+!RootState methodsFor: 'initialization' stamp: 'fa 10/18/2023 20:16:49'!
+initialize
+
+	childAssets := OrderedCollection new.! !
+
+
+!RootState methodsFor: 'testing' stamp: 'fa 10/18/2023 20:57:51'!
+holds: anAsset
+
+	^(assetReference  == anAsset) or: (self someChildAssetHolds: anAsset).! !
+
+!RootState methodsFor: 'testing' stamp: 'fa 10/18/2023 21:03:22'!
+someChildAssetHolds: anAsset
+
+	^childAssets anySatisfy: [ :childAsset |  childAsset holds: anAsset ].! !
+
+!RootState methodsFor: 'testing' stamp: 'fa 10/18/2023 20:58:08'!
+someParentAssetHolds: anAsset
+
+	^self holds: anAsset.! !
+
+
+!RootState methodsFor: 'setters' stamp: 'fa 10/18/2023 22:32:06'!
+addChildAsset: anAsset
+	
+	(self someParentAssetHolds: anAsset) ifTrue: [
+		^self error: self class attemptedToAddDuplicateAssetErrorDescription.
+	].
+	childAssets add: anAsset.
+	anAsset addParentAsset: assetReference.! !
+
+!RootState methodsFor: 'setters' stamp: 'fa 10/18/2023 21:19:11'!
+addParentAsset: anAsset
+
+	assetReference changeStateTo: (InnerState for: assetReference withParent: anAsset andChildren: childAssets).! !
+
+!RootState methodsFor: 'setters' stamp: 'fa 10/18/2023 22:19:44'!
+setChildAssets: children
+	"
+	metodo privado.
+	"
+	childAssets := children.
+! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'RootState class' category: 'Portfolio-Ejercicio'!
+RootState class
+	instanceVariableNames: ''!
+
+!RootState class methodsFor: 'instance creation' stamp: 'fa 10/18/2023 20:20:51'!
+for: anAsset
+
+	|state|
+	
+	state := RootState new.
+	state setAssetReference: anAsset.
+	
+	^state.! !
+
+
+!classDefinition: #InnerState category: 'Portfolio-Ejercicio'!
+RootState subclass: #InnerState
+	instanceVariableNames: 'parentAssets'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!InnerState methodsFor: 'initialization' stamp: 'fa 10/18/2023 21:15:19'!
+initialize
+
+	childAssets := OrderedCollection new.
+	parentAssets := OrderedCollection new.! !
+
+
+!InnerState methodsFor: 'setters' stamp: 'fa 10/18/2023 20:10:02'!
+addParentAsset: anAsset
+
+	parentAssets add: anAsset.! !
+
+
+!InnerState methodsFor: 'getters' stamp: 'fa 10/18/2023 20:14:59'!
+parentAssets
+
+	^parentAssets.! !
+
+
+!InnerState methodsFor: 'testing' stamp: 'fa 10/18/2023 20:11:43'!
+someParentAssetHolds: anAsset
+
+	^parentAssets anySatisfy: [ :parentAsset |  parentAsset someParentAssetHolds: anAsset ].! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'InnerState class' category: 'Portfolio-Ejercicio'!
+InnerState class
+	instanceVariableNames: ''!
+
+!InnerState class methodsFor: 'instance creation' stamp: 'fa 10/18/2023 20:21:24'!
+for: anAsset 
+
+	|state|
+	
+	state := InnerState new.
+	state setAssetReference:  anAsset.
+	
+	^state. 
+! !
+
+!InnerState class methodsFor: 'instance creation' stamp: 'fa 10/18/2023 20:21:14'!
+for: anAsset withParent: aParentAsset
+	
+	|state|
+	
+	state := InnerState new.
+	state setAssetReference:  anAsset.
+	state addParentAsset: aParentAsset.
+	
+	^state. ! !
+
+!InnerState class methodsFor: 'instance creation' stamp: 'fa 10/18/2023 22:19:27'!
+for: anAsset withParent: aParentAsset andChildren: childrenAssets
+	
+	|state|
+	
+	state := InnerState new.
+	state setAssetReference:  anAsset.
+	state addParentAsset: aParentAsset.
+	state setChildAssets: childrenAssets.
+	
+	^state. ! !
