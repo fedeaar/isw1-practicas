@@ -438,6 +438,256 @@ test09PortfolioNetTransferIsCalculatedProperlyForMultiLevelChildStructure
 	! !
 
 
+!classDefinition: #PortfolioContentsReportTest category: 'Portfolio-Ejercicio'!
+TestCase subclass: #PortfolioContentsReportTest
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!PortfolioContentsReportTest methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:14:51'!
+test01PortfolioContentsHasItselfOnly
+	
+	| portfolio summary expected |
+	
+	portfolio := Portfolio named: 'Portfolio de Fede'.
+	summary := PortfolioContents generateReportFor: portfolio.
+	
+	expected := OrderedCollection new.
+	expected
+		add: (Array with: 'Portfolio de Fede' with: 0).
+	
+	self assert: summary report = expected.! !
+
+!PortfolioContentsReportTest methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:20:17'!
+test02PortfolioContentsCannotBeGeneratedForReceptiveAccount
+	
+	| account  |
+	
+	account := ReceptiveAccount named: 'Portfolio de Fede'.
+	
+	self 
+		should: [PortfolioContents generateReportFor: account.]
+		raise: Error
+		withExceptionDo: [ :anException | 
+			self assert: anException messageText equals: PortfolioContents cannotGenerateReportForReceptiveAccountError.
+		].
+	
+	! !
+
+!PortfolioContentsReportTest methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:28:34'!
+test03PortfolioContentsIsGeneratedProperlyForSingleLevelPortfolio
+	"
+		A
+	     /    \
+	  a1    a2
+	"
+	| A a1 a2 summary expected |
+	
+	a1 := ReceptiveAccount named: 'cuenta de Brian'.
+	a2 := ReceptiveAccount named: 'cuenta de Kovo'.
+	A := Portfolio named: 'portfolio del rey'.
+	A 
+		addAsset: a1 ;
+		addAsset: a2.
+	
+	summary := PortfolioContents generateReportFor: A.
+	expected := OrderedCollection new.
+	expected
+		add: (Array with: 'portfolio del rey' with: 0) ;
+		add: (Array with: 'cuenta de Brian' with: 1) ;
+		add: (Array with: 'cuenta de Kovo' with: 1).
+		
+	self assert: summary report = expected.
+	! !
+
+!PortfolioContentsReportTest methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:37:35'!
+test04PortfolioContentsIsGeneratedProperlyForMultiLevelPortfolio
+	"
+		 A
+	     /    \    \
+	  a1    B   a3
+		   \
+		   a2
+	"
+	| A B a1 a2 a3 summary expected |
+	
+	a1 := ReceptiveAccount named: 'cuenta de Brian'.
+	a2 := ReceptiveAccount named: 'cuenta de Kovo'.
+	a3 := ReceptiveAccount named: 'cuenta de Fede'.
+	A := Portfolio named: 'portfolio del rey'.
+	B := Portfolio named: 'portfolio del otro'.
+	A 
+		addAsset: a1 ;
+		addAsset: B ;
+		addAsset: a3.
+	B
+		addAsset: a2.
+	
+	summary := PortfolioContents generateReportFor: A.
+	expected := OrderedCollection new.
+	expected
+		add: (Array with: 'portfolio del rey' with: 0) ;
+		add: (Array with: 'cuenta de Brian' with: 1) ;
+		add: (Array with: 'portfolio del otro' with: 1) ;
+		add: (Array with: 'cuenta de Kovo' with: 2) ;
+		add: (Array with: 'cuenta de Fede' with: 1).
+	
+	self assert: summary report = expected.
+	! !
+
+
+!classDefinition: #PortfolioSummaryReportTest category: 'Portfolio-Ejercicio'!
+TestCase subclass: #PortfolioSummaryReportTest
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!PortfolioSummaryReportTest methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:23:33'!
+test01PortfolioSummaryShowsNameAndBalanceIfEmpty
+	
+	| portfolio summary expected |
+	
+	portfolio := Portfolio named: 'portfolio de Fede'.
+	summary := PortfolioSummary generateReportFor: portfolio.
+	
+	expected := OrderedCollection new.
+	expected
+		add: (Array with: 'portfolio de Fede' with: 0) ;
+		add: (Array with: 'Balance = 0' with: 1).
+		
+	self assert: summary report = expected.! !
+
+!PortfolioSummaryReportTest methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:23:15'!
+test02PortfolioSummaryShowsSingleAssetCorrectly
+	
+	| A a1 a2 summary expected |
+	
+	A := Portfolio named: 'portfolio de Fede'.
+	a1 := ReceptiveAccount named: 'cuenta de Fede'.
+	a2 := ReceptiveAccount named: 'cuenta de Brian'.
+	
+	A addAsset: a1. 
+	
+	Deposit register: 100 on: a1.
+	Withdraw register: 50 on: a1.
+	Transfer register: 20 from: a1 to: a2.
+	Transfer register: 30 from: a2 to: a1. 
+	
+	summary := PortfolioSummary generateReportFor: A.
+	
+	expected := OrderedCollection new.
+	expected
+		add: (Array with: 'portfolio de Fede' with: 0) ;
+		add: (Array with: 'cuenta de Fede' with: 1) ; 
+		add: (Array with: 'Depósito por 100.' with: 2) ;
+		add: (Array with: 'Extracción por 50.' with: 2) ;
+		add: (Array with: 'Salida por transferencia de 20.' with: 2) ;
+		add: (Array with: 'Entrada por transferencia de 30.' with: 2) ;
+		add: (Array with: 'Balance = 60' with: 1).
+		
+	self assert: summary report = expected.
+	
+	! !
+
+!PortfolioSummaryReportTest methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:22:23'!
+test03PortfolioSummaryReportIsGeneratedLeftToRightForMultipleChildStructure
+	"
+		A
+	     /    |
+	  a1 ... a2
+	"
+	| A a1 a2 summary expected |
+	
+	A := Portfolio named: 'portfolio de Fede'.
+	a1 := ReceptiveAccount named: 'cuenta de Fede'.
+	a2 := ReceptiveAccount named: 'cuenta de Brian'.
+	
+	A addAsset:  a1.
+	A addAsset: a2.
+	
+	Deposit register: 100 on: a1.
+	Withdraw register: 50 on: a1.
+	Transfer register: 20 from: a1 to: a2.
+	Deposit register: 60 on: a2.
+	Withdraw register: 30 on: a2.
+	Transfer register: 30 from: a2 to: a1. 
+	
+	summary := PortfolioSummary generateReportFor: A.
+	expected := OrderedCollection new.
+	expected
+		add: (Array with: 'portfolio de Fede' with: 0) ;
+		add: (Array with: 'cuenta de Fede' with: 1) ;
+		add: (Array with: 'Depósito por 100.' with: 2) ;
+		add: (Array with: 'Extracción por 50.' with: 2) ;
+		add: (Array with: 'Salida por transferencia de 20.' with: 2) ;
+		add: (Array with: 'Entrada por transferencia de 30.' with: 2) ;
+		add: (Array with: 'cuenta de Brian' with: 1) ;
+		add: (Array with: 'Entrada por transferencia de 20.' with: 2) ;
+		add: (Array with: 'Depósito por 60.' with: 2) ;
+		add: (Array with: 'Extracción por 30.' with: 2) ;
+		add: (Array with: 'Salida por transferencia de 30.' with: 2) ;
+		add: (Array with: 'Balance = 80' with: 1).
+		
+	self assert: summary report = expected.! !
+
+!PortfolioSummaryReportTest methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:33:43'!
+test04PortfolioSummaryReportIsGeneratedLeftToRightForMultiLevelChildStructure
+	"
+		  A
+	     /    \	    \
+	  a1     B   a2
+		    \
+	            a3
+	"
+	| A B a1 a2 a3 summary expected |
+	
+	A := Portfolio named: 'portfolio de Fede'.
+	B := Portfolio named: 'portfolio de Brian'.
+	a1 := ReceptiveAccount named: 'cuenta de Fede'.
+	a2 := ReceptiveAccount named: 'cuenta de Brian'.
+	a3 := ReceptiveAccount named: 'cuenta de Kovo'.
+	
+	A addAsset:  a1.
+	A addAsset: B.
+	A addAsset: a2.
+	B addAsset: a3.
+	
+	Deposit register: 100 on: a1.
+	Withdraw register: 50 on: a1.
+	Transfer register: 20 from: a1 to: a2.
+	Deposit register: 60 on: a2.
+	Withdraw register: 30 on: a2.
+	Transfer register: 30 from: a2 to: a1.
+	Deposit register: 20 on: a3.
+	Deposit register: 20 on: a3. 
+	
+	summary := PortfolioSummary generateReportFor: A.
+	expected := OrderedCollection new.
+	expected
+		add: (Array with: 'portfolio de Fede' with: 0) ;
+		add: (Array with: 'cuenta de Fede' with: 1) ;
+		add: (Array with: 'Depósito por 100.' with: 2) ;
+		add: (Array with: 'Extracción por 50.' with: 2) ;
+		add: (Array with: 'Salida por transferencia de 20.' with: 2) ;
+		add: (Array with: 'Entrada por transferencia de 30.' with: 2) ;
+		add: (Array with: 'portfolio de Brian' with: 1) ;
+		add: (Array with: 'cuenta de Kovo' with: 2) ;
+		add: (Array with: 'Depósito por 20.' with: 3) ;
+		add: (Array with: 'Depósito por 20.' with: 3) ;
+		add: (Array with: 'Balance = 40' with: 2) ;
+		add: (Array with: 'cuenta de Brian' with: 1) ;
+		add: (Array with: 'Entrada por transferencia de 20.' with: 2) ;
+		add: (Array with: 'Depósito por 60.' with: 2) ;
+		add: (Array with: 'Extracción por 30.' with: 2) ;
+		add: (Array with: 'Salida por transferencia de 30.' with: 2) ;
+		add: (Array with: 'Balance = 120' with: 1).
+	
+	self assert: summary report = expected.
+	! !
+
+
 !classDefinition: #PortfolioTest category: 'Portfolio-Ejercicio'!
 TestCase subclass: #PortfolioTest
 	instanceVariableNames: ''
@@ -1012,10 +1262,10 @@ initializeFor: aValue
 	value := aValue ! !
 
 
-!Deposit methodsFor: 'value' stamp: 'fa 10/25/2023 23:44:48'!
+!Deposit methodsFor: 'value' stamp: 'fa 10/26/2023 17:06:55'!
 addToReport: aReport
 	
-	^aReport addDepositTransactionToReportWithValue: value.! !
+	^aReport addDepositTransactionToReport: self.! !
 
 !Deposit methodsFor: 'value' stamp: 'BK 10/16/2023 18:55:43'!
 fulfilmentValue
@@ -1096,10 +1346,10 @@ Transfer subclass: #IncomingTransfer
 	poolDictionaries: ''
 	category: 'Portfolio-Ejercicio'!
 
-!IncomingTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 23:44:42'!
+!IncomingTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:06:47'!
 addToReport: aReport
 	
-	^aReport addIncomingTransferTransactionToReportWithValue: self value.! !
+	^aReport addIncomingTransferTransactionToReport: self.! !
 
 !IncomingTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 21:14:51'!
 counterparty
@@ -1130,10 +1380,10 @@ Transfer subclass: #OutgoingTransfer
 	poolDictionaries: ''
 	category: 'Portfolio-Ejercicio'!
 
-!OutgoingTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 23:44:38'!
+!OutgoingTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:06:34'!
 addToReport: aReport
 	
-	^aReport addOutgoingTransferTransactionToReportWithValue: self value.! !
+	^aReport addOutgoingTransferTransactionToReport: self.! !
 
 !OutgoingTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 21:14:51'!
 counterparty
@@ -1170,10 +1420,10 @@ initializeFor: aValue
 	value := aValue ! !
 
 
-!Withdraw methodsFor: 'value' stamp: 'fa 10/25/2023 23:44:35'!
+!Withdraw methodsFor: 'value' stamp: 'fa 10/26/2023 17:06:24'!
 addToReport: aReport
 	
-	^aReport addWithdrawTransactionToReportWithValue: value.! !
+	^aReport addWithdrawTransactionToReport: self.! !
 
 !Withdraw methodsFor: 'value' stamp: 'BK 10/16/2023 18:55:20'!
 fulfilmentValue
@@ -1247,10 +1497,21 @@ hasRegistered: aTransaction
 
 	^ self subclassResponsibility.! !
 
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'Asset class' category: 'Portfolio-Ejercicio'!
+Asset class
+	instanceVariableNames: ''!
+
+!Asset class methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 15:47:13'!
+named: aName
+
+	^self new initializeWith: aName.! !
+
 
 !classDefinition: #Portfolio category: 'Portfolio-Ejercicio'!
 Asset subclass: #Portfolio
-	instanceVariableNames: 'state'
+	instanceVariableNames: 'state name'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Portfolio-Ejercicio'!
@@ -1281,10 +1542,12 @@ addParentAsset: anAsset
 
 	state addParentAsset: anAsset.! !
 
-!Portfolio methodsFor: 'state' stamp: 'fa 10/25/2023 23:44:23'!
+!Portfolio methodsFor: 'state' stamp: 'fa 10/26/2023 17:05:52'!
 addToReport: aReport
 
-	state childAssets do: [ :asset | aReport addAssetToReport: asset].! !
+	aReport addPortfolioToReport: self.
+	state childAssets do: [ :asset | aReport addAssetToReport: asset].
+	aReport endPortfolioFor: self.! !
 
 !Portfolio methodsFor: 'state' stamp: 'fa 10/18/2023 20:33:56'!
 assets
@@ -1301,6 +1564,11 @@ holds: anAsset
 
 	^state holds: anAsset.! !
 
+!Portfolio methodsFor: 'state' stamp: 'fa 10/26/2023 17:08:16'!
+name
+
+	^ name.! !
+
 !Portfolio methodsFor: 'state' stamp: 'fa 10/18/2023 20:49:57'!
 someParentAssetHolds: anAsset
 
@@ -1311,6 +1579,11 @@ someParentAssetHolds: anAsset
 initialize
 	
 	state := RootState for: self.! !
+
+!Portfolio methodsFor: 'initialization' stamp: 'fa 10/26/2023 15:46:12'!
+initializeWith: aName 
+	
+	name := aName.! !
 
 
 !Portfolio methodsFor: 'testing' stamp: 'fa 10/18/2023 20:34:45'!
@@ -1327,7 +1600,7 @@ balance
 
 !classDefinition: #ReceptiveAccount category: 'Portfolio-Ejercicio'!
 Asset subclass: #ReceptiveAccount
-	instanceVariableNames: 'transactions state'
+	instanceVariableNames: 'transactions state name'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Portfolio-Ejercicio'!
@@ -1338,11 +1611,18 @@ initialize
 	state := LeafState for: self.
 	transactions := OrderedCollection new.! !
 
+!ReceptiveAccount methodsFor: 'initialization' stamp: 'fa 10/26/2023 15:46:22'!
+initializeWith: aName 
+	
+	name := aName.! !
 
-!ReceptiveAccount methodsFor: 'transactions' stamp: 'fa 10/25/2023 23:44:08'!
+
+!ReceptiveAccount methodsFor: 'transactions' stamp: 'fa 10/26/2023 17:06:12'!
 addToReport: aReport
 
-	transactions do: [ :transaction | aReport addTransactionToReport: transaction ].! !
+	aReport addReceptiveAccountToReport: self.
+	transactions do: [ :transaction | aReport addTransactionToReport: transaction ].
+	aReport endReceptiveAccountFor: self.! !
 
 !ReceptiveAccount methodsFor: 'transactions' stamp: 'fa 10/18/2023 20:39:52'!
 addTransactionsTo: anOrderedCollection 
@@ -1389,6 +1669,11 @@ holds: anAsset
 
 	^state holds: anAsset.! !
 
+!ReceptiveAccount methodsFor: 'state' stamp: 'fa 10/26/2023 17:09:03'!
+name
+
+	^name.! !
+
 
 !classDefinition: #AssetReport category: 'Portfolio-Ejercicio'!
 Object subclass: #AssetReport
@@ -1403,18 +1688,28 @@ addAssetToReport: anAsset
 	self subclassResponsibility.
 ! !
 
-!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:04:54'!
-addDepositTransactionToReportWithValue: aValue
+!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:00:59'!
+addDepositTransactionToReport: aDeposit
 
 	self subclassResponsibility.! !
 
-!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:04:48'!
-addIncomingTransferTransactionToReportWithValue: aValue
+!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:00:53'!
+addIncomingTransferTransactionToReport: aTransfer
 
 	self subclassResponsibility.! !
 
-!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:05:23'!
-addOutgoingTransferTransactionToReportWithValue: aValue
+!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:00:47'!
+addOutgoingTransferTransactionToReport: aTransfer
+
+	self subclassResponsibility.! !
+
+!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:00:40'!
+addPortfolioToReport: aPortfolio.
+
+	self subclassResponsibility.! !
+
+!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:00:26'!
+addReceptiveAccountToReport: anAccount.
 
 	self subclassResponsibility.! !
 
@@ -1423,13 +1718,23 @@ addTransactionToReport: aTransaction
 
 	self subclassResponsibility.! !
 
-!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:05:41'!
-addWithdrawTransactionToReportWithValue: aValue
+!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:00:06'!
+addWithdrawTransactionToReport: aWithdrawal
 
 	self subclassResponsibility.! !
 
 !AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:05:50'!
 display
+
+	self subclassResponsibility.! !
+
+!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:59:52'!
+endPortfolioFor: aPortfolio
+
+	self subclassResponsibility.! !
+
+!AssetReport methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:59:42'!
+endReceptiveAccountFor: anAccount
 
 	self subclassResponsibility.! !
 
@@ -1473,23 +1778,33 @@ addBalanceToReportFrom: anAsset
 	
 	report add: 'Balance = ', (anAsset balance asString).! !
 
-!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 23:43:20'!
-addDepositTransactionToReportWithValue: aValue
+!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:01:17'!
+addDepositTransactionToReport: aDeposit
 
-	report add: ('Depósito por ', (aValue asString), '.'). 
+	report add: ('Depósito por ', (aDeposit value asString), '.'). 
 ! !
 
-!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 23:43:28'!
-addIncomingTransferTransactionToReportWithValue: aValue
+!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:01:28'!
+addIncomingTransferTransactionToReport: aTransfer
 
-	^ report add: ('Entrada por transferencia de ', (aValue asString), '.'). 
+	^ report add: ('Entrada por transferencia de ', (aTransfer value asString), '.'). 
 ! !
 
-!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 23:43:36'!
-addOutgoingTransferTransactionToReportWithValue: aValue
+!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:01:40'!
+addOutgoingTransferTransactionToReport: aTransfer
 
-	^ report add: ('Salida por transferencia de ', (aValue asString), '.'). 
+	^ report add: ('Salida por transferencia de ', (aTransfer value asString), '.'). 
 ! !
+
+!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:01:49'!
+addPortfolioToReport: aPortfolio.
+
+	"do nothing."! !
+
+!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:01:57'!
+addReceptiveAccountToReport: anAccount.
+
+	"do nothing."! !
 
 !AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 23:42:29'!
 addTransactionToReport: aTransaction
@@ -1497,10 +1812,10 @@ addTransactionToReport: aTransaction
 	aTransaction addToReport: self.
 ! !
 
-!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 23:43:45'!
-addWithdrawTransactionToReportWithValue: aValue
+!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:02:08'!
+addWithdrawTransactionToReport: aWithdrawal
 
-	report add: ('Extracción por ', (aValue asString), '.'). 
+	report add: ('Extracción por ', (aWithdrawal value asString), '.'). 
 ! !
 
 !AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/25/2023 23:55:00'!
@@ -1508,6 +1823,16 @@ display
 	
 	report do: [ :line | Transcript show: line ; newLine ].
 ! !
+
+!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:02:19'!
+endPortfolioFor: aPortfolio
+
+	"do nothing."! !
+
+!AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:02:26'!
+endReceptiveAccountFor: anAccount
+
+	"do nothing."! !
 
 !AssetSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:01:02'!
 generateReportFor: anAsset
@@ -1539,23 +1864,33 @@ addAssetToReport: anAsset
 	anAsset addToReport: self.
 ! !
 
-!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:11:38'!
-addDepositTransactionToReportWithValue: aValue
+!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:02:39'!
+addDepositTransactionToReport: aDeposit
 
 	"do nothing." 
 ! !
 
-!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:12:46'!
-addIncomingTransferTransactionToReportWithValue: aValue
+!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:07:34'!
+addIncomingTransferTransactionToReport: aTransfer
 
-	netTransfer := netTransfer + aValue.
+	netTransfer := netTransfer + aTransfer value.
 ! !
 
-!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:12:55'!
-addOutgoingTransferTransactionToReportWithValue: aValue
+!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:07:38'!
+addOutgoingTransferTransactionToReport: aTransfer
 
-	netTransfer := netTransfer - aValue.
+	netTransfer := netTransfer - aTransfer value.
 ! !
+
+!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:02:58'!
+addPortfolioToReport: aPortfolio.
+
+	"do nothing."! !
+
+!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:03:03'!
+addReceptiveAccountToReport: anAccount.
+
+	"do nothing."! !
 
 !NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:09:25'!
 addTransactionToReport: aTransaction
@@ -1564,8 +1899,8 @@ addTransactionToReport: aTransaction
 
 ! !
 
-!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:13:10'!
-addWithdrawTransactionToReportWithValue: aValue
+!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:03:11'!
+addWithdrawTransactionToReport: aWithdrawal
 
 	"do nothing."
 ! !
@@ -1574,6 +1909,18 @@ addWithdrawTransactionToReportWithValue: aValue
 display
 	
 	Transcript show:  netTransfer asString.
+! !
+
+!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:03:21'!
+endPortfolioFor: aPortfolio
+
+	"do nothing."
+! !
+
+!NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:03:27'!
+endReceptiveAccountFor: anAccount
+
+	"do nothing."
 ! !
 
 !NetTransfer methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 00:10:37'!
@@ -1590,6 +1937,223 @@ report
 	
 	^netTransfer .
 
+! !
+
+
+!classDefinition: #PortfolioContents category: 'Portfolio-Ejercicio'!
+AssetReport subclass: #PortfolioContents
+	instanceVariableNames: 'report tabs'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 15:43:28'!
+addAssetToReport: anAsset
+
+	anAsset addToReport: self.
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:03:59'!
+addBalanceToReportFrom: anAsset
+	
+	"do nothing."! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:03:43'!
+addDepositTransactionToReport: aDeposit
+
+	"do nothing."
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:03:51'!
+addIncomingTransferTransactionToReport: aTransfer
+
+	"do nothing."
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:03:56'!
+addOutgoingTransferTransactionToReport: aTransfer
+
+	"do nothing."
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:04:08'!
+addPortfolioToReport: aPortfolio.
+
+	report add:  (Array with: (aPortfolio name) with: tabs).
+	tabs := tabs + 1.! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:04:23'!
+addReceptiveAccountToReport: anAccount.
+
+	(tabs = 0) ifTrue: [^self error: self class cannotGenerateReportForReceptiveAccountError].
+	report add:  (Array with: (anAccount name) with: tabs).! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 15:43:28'!
+addTransactionToReport: aTransaction
+
+	aTransaction addToReport: self.
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:04:32'!
+addWithdrawTransactionToReport: aWithdrawal
+
+	"do nothing."
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:36:23'!
+display
+	
+	report do: [ :lineTabPair | 
+		self generateTabs: (lineTabPair at: 2). 
+		Transcript show: (lineTabPair at: 1) ; newLine ].
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:04:41'!
+endPortfolioFor: aPortfolio
+
+	tabs := tabs - 1.
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:04:47'!
+endReceptiveAccountFor: anAccount
+
+	"do nothing."
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:05:02'!
+generateReportFor: aPortfolio
+	
+	report := OrderedCollection new.
+	tabs := 0.
+	aPortfolio addToReport: self.
+	
+	^self.
+! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:32:45'!
+generateTabs: amount
+
+	amount timesRepeat: [ Transcript show: '    ' ].
+	! !
+
+!PortfolioContents methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 15:43:28'!
+report
+	
+	^report.
+! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'PortfolioContents class' category: 'Portfolio-Ejercicio'!
+PortfolioContents class
+	instanceVariableNames: ''!
+
+!PortfolioContents class methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:18:18'!
+cannotGenerateReportForReceptiveAccountError
+	
+	^ 'cannot generate Portfolio Contents report for Receptive Account'.! !
+
+
+!classDefinition: #PortfolioSummary category: 'Portfolio-Ejercicio'!
+AssetReport subclass: #PortfolioSummary
+	instanceVariableNames: 'report tabs'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio-Ejercicio'!
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:42:22'!
+addAssetToReport: anAsset
+
+	anAsset addToReport: self.
+! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:46:12'!
+addBalanceToReportFrom: anAsset
+	
+	report add: (Array with: 'Balance = ', (anAsset balance asString) with: tabs).! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:55:12'!
+addDepositTransactionToReport: aDeposit
+
+	report add: (Array with: ('Depósito por ', (aDeposit value asString), '.') with: tabs). 
+! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:56:00'!
+addIncomingTransferTransactionToReport: aTransfer
+
+	^ report add: (Array with: ('Entrada por transferencia de ', (aTransfer value asString), '.') with: tabs). 
+! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:56:12'!
+addOutgoingTransferTransactionToReport: aTransfer
+
+	^ report add: (Array with: ('Salida por transferencia de ', (aTransfer value asString), '.') with: tabs). 
+! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:52:23'!
+addPortfolioToReport: aPortfolio.
+
+	report add:  (Array with: (aPortfolio name) with: tabs).
+	tabs := tabs + 1.! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:52:52'!
+addReceptiveAccountToReport: anAccount
+
+	report add:  (Array with: (anAccount name) with: tabs).
+	tabs := tabs + 1.! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:42:22'!
+addTransactionToReport: aTransaction
+
+	aTransaction addToReport: self.
+! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:56:33'!
+addWithdrawTransactionToReport: aWithdrawal
+
+	report add: (Array with: ('Extracción por ', (aWithdrawal value asString), '.') with: tabs). 
+! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:57:12'!
+display
+	
+	report do: [ :lineTabPair | 
+		self generateTabs: (lineTabPair at: 2). 
+		Transcript show: (lineTabPair at: 1) ; newLine ].
+
+! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:22:45'!
+endPortfolioFor: aPortfolio
+
+	self addBalanceToReportFrom: aPortfolio.
+	tabs := tabs - 1.! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:22:37'!
+endReceptiveAccountFor: anAccount
+
+	tabs := tabs - 1.! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:56:48'!
+generateReportFor: anAsset
+	
+	report := OrderedCollection new.
+	tabs := 0.
+	anAsset addToReport: self.
+	
+	^self.
+! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 17:32:26'!
+generateTabs: amount
+
+	amount timesRepeat: [ Transcript show: '    ' ].
+	! !
+
+!PortfolioSummary methodsFor: 'as yet unclassified' stamp: 'fa 10/26/2023 16:42:22'!
+report
+	
+	^report.
 ! !
 
 
