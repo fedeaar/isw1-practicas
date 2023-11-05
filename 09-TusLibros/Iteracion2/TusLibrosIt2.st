@@ -1,3 +1,147 @@
+!classDefinition: #CashierTest category: 'TusLibros'!
+TestCase subclass: #CashierTest
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!CashierTest methodsFor: 'tests' stamp: 'BK 11/5/2023 12:20:02'!
+test01cannotProcessEmptyCart
+
+	| cart cashier |
+
+	cart := PurchaseCart forStore: self defaultCatalog.
+	cashier := self createCashier.
+	
+	self 
+		should: [ cashier process: cart ]
+		raise: Error
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = cashier cannotProcessEmptyCartError.
+		].
+	
+	! !
+
+!CashierTest methodsFor: 'tests' stamp: 'BK 11/5/2023 12:43:58'!
+test02canProcessOneValidItem
+
+	| cart cashier amount expectedAmount |
+
+	cart := self createCart.
+	cart add: self itemInCatalog copies: 1.
+	
+	cashier := self createCashier.
+	
+	amount := cashier process: cart.
+	expectedAmount := (self defaultCatalog at: self itemInCatalog).
+	
+	self assert: amount = expectedAmount.
+	
+	! !
+
+!CashierTest methodsFor: 'tests' stamp: 'BK 11/5/2023 12:44:16'!
+test03canProcessMultipleValidItems
+
+	| cart cashier amount expectedAmount |
+
+	cart := self createCart.
+	cart
+		add: self itemInCatalog copies: 1;
+		add: self item2inCatalog copies: 2.
+	
+	cashier := self createCashier.
+	
+	amount := cashier process: cart.
+	expectedAmount :=
+		(self defaultCatalog at: self itemInCatalog) +
+		((self defaultCatalog at: self item2inCatalog) * 2).
+	
+	self assert: amount = expectedAmount.
+	
+	! !
+
+!CashierTest methodsFor: 'tests' stamp: 'BK 11/5/2023 12:43:50'!
+test04cannotProcessItemsNotInCatalog
+
+	| cart cashier |
+
+	cart := self createCart.
+	cart
+		add: self itemNotInCatalog copies: 1.
+	
+	cashier := self createCashier.
+	
+	self 
+		should: [ cashier process: cart ]
+		raise: Error
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = cashier itemNotInCatalogError.
+		].
+	
+	! !
+
+
+!CashierTest methodsFor: 'support' stamp: 'BK 11/5/2023 12:30:36'!
+createCart
+
+	| cart |
+	
+	cart := PurchaseCart forStore: self defaultStore.
+	
+	^ cart
+	! !
+
+!CashierTest methodsFor: 'support' stamp: 'BK 11/5/2023 12:19:40'!
+createCashier
+
+	| cashier |
+	
+	cashier := Cashier withCatalog: self defaultCatalog.
+	
+	^ cashier
+	! !
+
+!CashierTest methodsFor: 'support' stamp: 'BK 11/5/2023 12:44:16'!
+defaultCatalog
+
+	| catalog |
+	
+	catalog := Dictionary new.
+	catalog
+		add: (self itemInCatalog -> 1);
+		add: (self item2inCatalog -> 2).
+
+	^ catalog.! !
+
+!CashierTest methodsFor: 'support' stamp: 'BK 11/5/2023 12:44:40'!
+defaultStore
+
+	| catalog |
+	
+	catalog := Dictionary new.
+	catalog
+		add: (self itemInCatalog -> 100);
+		add: (self item2inCatalog  -> 100);
+		add: (self itemNotInCatalog -> 100).
+
+	^ catalog.! !
+
+!CashierTest methodsFor: 'support' stamp: 'BK 11/5/2023 12:44:16'!
+item2inCatalog
+
+	^ 'validItem2'! !
+
+!CashierTest methodsFor: 'support' stamp: 'BK 11/5/2023 12:43:58'!
+itemInCatalog
+
+	^ 'validItem'! !
+
+!CashierTest methodsFor: 'support' stamp: 'BK 11/5/2023 12:43:50'!
+itemNotInCatalog
+
+	^ 'invalidItem'! !
+
+
 !classDefinition: #MerchantProcessorBridgeTest category: 'TusLibros'!
 TestCase subclass: #MerchantProcessorBridgeTest
 	instanceVariableNames: ''
@@ -335,6 +479,52 @@ test09noSePuedeAgregarUnaCantidadNoPositivaDeLibros
 		].! !
 
 
+!classDefinition: #Cashier category: 'TusLibros'!
+Object subclass: #Cashier
+	instanceVariableNames: 'catalog'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!Cashier methodsFor: 'initializers' stamp: 'BK 11/5/2023 12:01:40'!
+initializeWithCatalog: aCatalog
+
+	catalog := aCatalog.! !
+
+
+!Cashier methodsFor: 'error messages' stamp: 'BK 11/5/2023 12:12:08'!
+cannotProcessEmptyCartError
+
+	^ 'Cannot process empty cart.'! !
+
+!Cashier methodsFor: 'error messages' stamp: 'BK 11/5/2023 12:42:46'!
+itemNotInCatalogError
+
+	^ 'Item not in catalog.'! !
+
+
+!Cashier methodsFor: 'operators' stamp: 'BK 11/5/2023 12:45:33'!
+process: aCart
+
+	aCart isEmpty ifTrue: [ self error: self cannotProcessEmptyCartError ].
+	
+	^aCart contents sum: [ :anItem |
+		catalog at: anItem
+			ifAbsent: [ self error: self itemNotInCatalogError ]
+	].! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'Cashier class' category: 'TusLibros'!
+Cashier class
+	instanceVariableNames: ''!
+
+!Cashier class methodsFor: 'as yet unclassified' stamp: 'BK 11/5/2023 12:00:36'!
+withCatalog: aCatalog
+
+	^ Cashier new initializeWithCatalog: aCatalog.! !
+
+
 !classDefinition: #HTTPRequester category: 'TusLibros'!
 Object subclass: #HTTPRequester
 	instanceVariableNames: ''
@@ -647,6 +837,11 @@ add: aBook copies: aQuantity
 	
 	contents add: aBook withOccurrences: aQuantity.
 ! !
+
+!PurchaseCart methodsFor: 'operation' stamp: 'BK 11/5/2023 12:04:08'!
+contents 
+
+	^ contents.! !
 
 
 !PurchaseCart methodsFor: 'initialization' stamp: 'fa 11/2/2023 18:43:28'!
