@@ -80,71 +80,35 @@ test04cannotProcessItemsNotInCatalog
 	
 	! !
 
-!CashierTest methodsFor: 'tests' stamp: 'BK 11/5/2023 19:52:49'!
+!CashierTest methodsFor: 'tests' stamp: 'BK 11/7/2023 16:08:37'!
 test05cannotCheckoutWithExpiredCard
 
 	| cart cashier invalidCard |
 
 	cart := self createCart.
-	cart add: self itemNotInCatalog copies: 1.
+	cart add: self itemInCatalog copies: 1.
 	
-	cashier := self createCashier.
+	cashier := self createCashierWhichMerchantThatReturns: '1|INVALID CARD' withCode: 200.
 	
 	invalidCard := CreditCard
-		withCCN: 0
-		andCCED: 0
-		andCCO: 0.
+		withCCN: '0000000000000000'
+		andCCED: '102020'
+		andCCO: 'Brian'.
 	
 	self 
-		should: [ cashier checkout: cart with: invalidCard ]
+		should: [ cashier checkout: cart withCard: invalidCard ]
 		raise: Error
 		withExceptionDo: [ :anError |
-			self assert: anError messageText = MerchantProcessorBridge expiredCard.
+			self assert: anError messageText = MerchantProcessorBridge invalidExpirationDateError.
 		].
 	
 	! !
 
-!CashierTest methodsFor: 'tests' stamp: 'BK 11/5/2023 20:51:06'!
-test06willFulfillCheckoutPaymentIfMerchantProcessorAgrees
+!CashierTest methodsFor: 'tests'!
+! !
 
-	| cart cashier card response |
-
-	cart := self createCart.
-	cart add: self itemInCatalog copies: 1.
-	
-	cashier := self createCashierWhichMerchantThatReturns: '0|OK'.
-	
-	card := CreditCard
-		withCCN: '0000000000000000'
-		andCCED: '102029'
-		andCCO: 'Brian'.
-		
-	response := cashier checkout: cart withCard: card.
-	
-	self assert: (response at: 2) = '0|OK'.
-	
-	! !
-
-!CashierTest methodsFor: 'tests' stamp: 'BK 11/5/2023 21:04:15'!
-test07willNotFulfillCheckoutPaymentIfMerchantProcessorDisagrees
-
-	| cart cashier card response |
-
-	cart := self createCart.
-	cart add: self itemInCatalog copies: 1.
-	
-	cashier := self createCashierWhichMerchantThatReturns: '1|ERROR'.
-	
-	card := CreditCard
-		withCCN: '0000000000000000'
-		andCCED: '102029'
-		andCCO: 'Brian'.
-	
-	response := cashier checkout: cart withCard: card.
-	
-	self assert: (response at: 2) ~= '0|OK'.
-	
-	! !
+!CashierTest methodsFor: 'tests'!
+! !
 
 
 !CashierTest methodsFor: 'support' stamp: 'BK 11/5/2023 12:30:36'!
@@ -167,14 +131,14 @@ createCashier
 	^ cashier
 	! !
 
-!CashierTest methodsFor: 'support' stamp: 'BK 11/5/2023 20:43:55'!
-createCashierWhichMerchantThatReturns: aMessage
+!CashierTest methodsFor: 'support' stamp: 'BK 11/7/2023 16:08:18'!
+createCashierWhichMerchantThatReturns: aMessage withCode: aCode
 
 	| cashier httpRequester merchant |
 	
 	httpRequester := MockHTTPRequester new.	
 	httpRequester 
-		shouldResolveWithCode: 200 
+		shouldResolveWithCode: aCode 
 		andMessage: aMessage.
 		
 	merchant := MerchantProcessorBridge with: httpRequester forMerchantHost: 'dummy-host'.
@@ -592,22 +556,25 @@ test09noSePuedeAgregarUnaCantidadNoPositivaDeLibros
 
 !classDefinition: #Cashier category: 'TusLibros'!
 Object subclass: #Cashier
-	instanceVariableNames: 'catalog merchant'
+	instanceVariableNames: 'catalog merchant lastTransactionID salesBook'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Cashier methodsFor: 'initializers' stamp: 'BK 11/5/2023 12:01:40'!
-initializeWithCatalog: aCatalog
+!Cashier methodsFor: 'initializers'!
+! !
 
-	catalog := aCatalog.! !
-
-!Cashier methodsFor: 'initializers' stamp: 'BK 11/5/2023 20:43:33'!
+!Cashier methodsFor: 'initializers' stamp: 'BK 11/7/2023 16:03:03'!
 initializeWithCatalog: aCatalog andMerchant: aMerchant
 
-	catalog := aCatalog.
+	self initializeWithCatalog: aCatalog.
 	merchant := aMerchant.! !
 
+
+!Cashier methodsFor: 'error messages' stamp: 'BK 11/7/2023 15:59:42'!
+badRequestError
+
+	^ 'Bad request'! !
 
 !Cashier methodsFor: 'error messages' stamp: 'BK 11/5/2023 12:12:08'!
 cannotProcessEmptyCartError
@@ -619,16 +586,14 @@ itemNotInCatalogError
 
 	^ 'Item not in catalog.'! !
 
+!Cashier methodsFor: 'error messages' stamp: 'BK 11/7/2023 15:59:51'!
+merchantProcessorError
 
-!Cashier methodsFor: 'operators' stamp: 'BK 11/5/2023 20:51:38'!
-checkout: aCart withCard: aCard
+	^ 'Merchant processor error'! !
 
-	| amount |
-	
-	amount := self process: aCart.
-	amount := amount truncateTo: 2.
-	
-	^ merchant processPaymentOf: amount withCard: aCard.! !
+
+!Cashier methodsFor: 'operators'!
+! !
 
 !Cashier methodsFor: 'operators' stamp: 'BK 11/5/2023 12:45:33'!
 process: aCart
@@ -639,6 +604,9 @@ process: aCart
 		catalog at: anItem
 			ifAbsent: [ self error: self itemNotInCatalogError ]
 	].! !
+
+!Cashier methodsFor: 'operators'!
+! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
