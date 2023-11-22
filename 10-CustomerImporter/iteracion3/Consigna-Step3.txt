@@ -1,0 +1,5 @@
+consigna:
+
+- Desacoplar la base de datos, haciendo el sistema Persistente y Transient.
+- hacer que la creación del sistema dependa del environment.
+
